@@ -1,6 +1,6 @@
 import websocket from "ws";
 
-const wss = new websocket.Server({ port: 8080 });
+const wss = new websocket.Server({ port: 8082 });
 
 wss.on("connection", (ws) => {
   console.log("Client connected");
@@ -14,4 +14,4 @@ wss.on("connection", (ws) => {
     });
 });
 
-console.log("WebSocket server is running on port 8080");
+console.log("WebSocket server is running on port 8082");

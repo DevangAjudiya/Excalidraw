@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start":"node dist/index.js",
-    "build":"tsc -b",
-    "dev":"npm run buid && npm run start"
+    "start": "node dist/index.js",
+    "build": "tsc -b",
+    "dev": "npm run buid && npm run start"
   },
-
   "dependencies": {
-    "@repo/typescript-config" : "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "@types/ws": "^8.18.1",
+    "ws": "^8.21.0"
   },
   "keywords": [],
   "author": "",

@@ -1,6 +1,6 @@
 import websocket from "ws";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "./config";
+import { JWT_SECRET } from "@repo/backend-common/config";
 const wss = new websocket.Server({ port: 8082 });
 
 wss.on("connection", (ws, request) => {
@@ -30,6 +30,7 @@ wss.on("connection", (ws, request) => {
     ws.on("close", () => {
         console.log("Client disconnected");
     });
+
 });
 
 console.log("WebSocket server is running on port 8082");

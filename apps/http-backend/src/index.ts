@@ -102,12 +102,27 @@ app.post("/room", authMiddleware, async (req, res) => {
     });
 
     res.send({
-        roomId: response.id,
+        roomId: Math.random()* 1000,
         slug: response.slug
     });
 });
 
+app.get("/chats/:roomId", async(req,res)=>{
+    const roomId = parseInt(req.params.roomId);
+    const message = await prisma.chat.findMany({
+        where:{
+            id:roomId
+        },
+        orderBy : {
+            id : "desc"
+        },
+        take:50
+    })
+    res.send({
+        message
+    })
 
+})
 app.listen(8080, () => {
     console.log("Server is running on port 8080");
 });

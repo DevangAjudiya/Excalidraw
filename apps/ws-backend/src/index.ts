@@ -1,6 +1,7 @@
 import websocket from "ws";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
+import { prisma } from "@repo/db/client";
 const wss = new websocket.Server({ port: 8082 });
 
 wss.on("connection", (ws, request) => {

@@ -4,43 +4,106 @@ import cors from "cors";
 import { prisma } from "@repo/db/client";
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { authMiddleware } from "./middleware";
-import { CreateUserSchema } from "@repo/common/types";
+import { CreateUserSchema, SignInUserSchema, CreateRoomSchema } from "@repo/common/types";
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 
-app.get("/", (req , res ) => {
-  res.send("Hello World!");
+app.get("/", (req, res) => {
+    res.send("Hello World!");
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
     const data = CreateUserSchema.safeParse(req.body);
-    if(!data.success){
-        return res.status(400).send({message: "Invalid request data", errors: data.error});
+    if (!data.success) {
+        return res.status(400).send({ message: "Invalid request data", errors: data.error });
     }
-    const { username ,password } = req.body;
-    const token = jwt.sign({username}, JWT_SECRET);
-    res.send({
-        message: `User ${username} signed up successfully!`,
-        token : token
+    const { email, password, name, photo } = data.data;
+    try {
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+
+        if (existingUser) {
+            return res.status(400).send({ message: "User already exists" });
+        }
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password,
+                name,
+                photo
+            }
+        });
+        if (!user) {
+            return res.status(500).send({ message: "Failed to create user" });
+        }
+
+        res.send({
+            message: `User ${name} signed up successfully!`,
+        });
+    } catch (error) {
+        console.error("Error during signup:", error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+
+app.post("/signin", async (req, res) => {
+    const { email, password } = req.body;
+    const data = SignInUserSchema.safeParse(req.body);
+
+
+    if (!data.success) {
+        return res.status(400).send({ message: "Invalid request data", errors: data.error });
+    }
+
+
+    const user = await prisma.user.findFirst({
+        where: {
+            email: email
+        },
+        select: {
+            id: true, password: true, email: true
+        }
     });
-  
-});
 
-app.post("/signin", (req, res) => {
-    const { username ,password } = req.body;
-    const token = jwt.sign({username}, JWT_SECRET);
-    res.send({ 
-        message: `User ${username} signed in successfully!`,
-        token: token
-     });
-});
+    if (!user || user.password !== password) {
+        return res.status(401).send({ message: "Invalid email or password" });
+    }
 
-app.post("/room", authMiddleware, (req, res) => {
-    const { roomName } = req.body;
+
+    const token = jwt.sign({ email }, JWT_SECRET);
     res.send({
-        message: `Room ${roomName} created successfully!`,
+        message: `User ${email} signed in successfully!`,
+        token: token
+    });
+});
+
+app.post("/room", authMiddleware, async (req, res) => {
+    const data = CreateRoomSchema.safeParse(req.body);
+    if (!data.success) {
+        return res.status(400).send({ message: "Invalid request data", errors: data.error });
+    }
+
+    const email = (req as any).email;
+
+    const user = await prisma.user.findUnique({
+        where: { email }
+    });
+
+    if (!user) {
+        return res.status(404).send({ message: "User not found" });
+    }
+
+    const response = await prisma.room.create({
+        data: {
+            slug: data.data.name,
+            adminId: email 
+        }
+    });
+
+    res.send({
+        roomId: response.id,
+        slug: response.slug
     });
 });
 

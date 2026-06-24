@@ -49,8 +49,13 @@ wss.on("connection", (ws, request) => {
     })
 
     ws.on("message", async function message(data) {
-        const parseData = JSON.parse(data as unknown as string);
-        console.log(parseData);
+        let parseData;
+        try {
+            parseData = JSON.parse(data as unknown as string);
+        } catch (e) {
+            console.error("Failed to parse WebSocket message:", e);
+            return;
+        }
 
         if (parseData.type == "join_room") {
             const user = users.find(x => x.ws === ws);
@@ -60,39 +65,44 @@ wss.on("connection", (ws, request) => {
         if (parseData.type == "leave_room") {
             const user = users.find(x => x.ws === ws);
             if (user) {
-                user.rooms = user.rooms.filter(x => x !== parseData.room);
+                user.rooms = user.rooms.filter(x => x !== parseData.roomId);
             }
         }
 
-        if(parseData.type === "chat"){
-            const roomId :string= parseData.roomId;
-            const massage : string = parseData.message;
+        if (parseData.type === "chat") {
+            const roomId: string = parseData.roomId;
+            const messageText: string = parseData.message;
 
-            await prisma.chat.create({
-                data:{
-                    roomId,
-                    massage:massage,
-                    userId : userId
-                }
-            });
+            try {
+                await prisma.chat.create({
+                    data: {
+                        roomId,
+                        message: messageText,
+                        userId: userId
+                    }
+                });
 
-
-            users.forEach(user => {
-                if(user.rooms.includes(roomId)){
-                    user.ws.send(JSON.stringify({
-                        type: "chat",
-                        message:message,
-                        roomId
-                    }))
-                }
-            })
+                users.forEach(user => {
+                    if (user.rooms.includes(roomId)) {
+                        user.ws.send(JSON.stringify({
+                            type: "chat",
+                            message: messageText,
+                            roomId
+                        }));
+                    }
+                });
+            } catch (err) {
+                console.error("Error handling chat message:", err);
+            }
         }
-
-
     });
 
     ws.on("close", () => {
         console.log("Client disconnected");
+        const index = users.findIndex(x => x.ws === ws);
+        if (index !== -1) {
+            users.splice(index, 1);
+        }
     });
 
 });

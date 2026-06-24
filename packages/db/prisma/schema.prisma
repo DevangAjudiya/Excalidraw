@@ -4,7 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider     = "prisma-client"
+  provider     = "prisma-client-js"
   output       = "../generated/prisma"
   moduleFormat = "cjs"
 }
@@ -36,7 +36,7 @@ model room {
 model chat{
   id Int @id @default(autoincrement())
   roomId String
-  massage String
+  message String
   userId String
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [email])

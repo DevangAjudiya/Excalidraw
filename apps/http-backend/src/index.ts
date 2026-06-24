@@ -102,27 +102,35 @@ app.post("/room", authMiddleware, async (req, res) => {
     });
 
     res.send({
-        roomId: Math.random()* 1000,
+        roomId: response.id,
         slug: response.slug
     });
 });
 
-app.get("/chats/:roomId", async(req,res)=>{
-    const roomId = parseInt(req.params.roomId);
-    const message = await prisma.chat.findMany({
-        where:{
-            id:roomId
-        },
-        orderBy : {
-            id : "desc"
-        },
-        take:50
-    })
-    res.send({
-        message
-    })
-
-})
+app.get("/chats/:roomId", async (req, res) => {
+    const roomId = req.params.roomId;
+    if (!roomId) {
+        return res.status(400).send({ message: "roomId is required" });
+    }
+    
+    try {
+        const chats = await prisma.chat.findMany({
+            where: {
+                roomId: roomId
+            },
+            orderBy: {
+                id: "desc"
+            },
+            take: 50
+        });
+        res.send({
+            messages: chats
+        });
+    } catch (error) {
+        console.error("Error fetching chats:", error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
 app.listen(8080, () => {
     console.log("Server is running on port 8080");
 });

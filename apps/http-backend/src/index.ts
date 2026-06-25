@@ -94,17 +94,21 @@ app.post("/room", authMiddleware, async (req, res) => {
         return res.status(404).send({ message: "User not found" });
     }
 
-    const response = await prisma.room.create({
-        data: {
-            slug: data.data.name,
-            adminId: email 
-        }
-    });
+    try {
+        const response = await prisma.room.create({
+            data: {
+                slug: data.data.name,
+                adminId: email 
+            }
+        });
 
-    res.send({
-        roomId: response.id,
-        slug: response.slug
-    });
+        res.send({
+            roomId: response.id,
+            slug: response.slug
+        });
+    } catch (e) {
+        return res.status(400).send({ message: "Room with this name already exists" });
+    }
 });
 
 app.get("/chats/:roomId", async (req, res) => {
@@ -131,6 +135,21 @@ app.get("/chats/:roomId", async (req, res) => {
         res.status(500).send({ message: "Internal server error" });
     }
 });
+
+app.get("/room/:slug",async (req,res)=>{
+    const slug = req.params.slug;
+    const room =  await prisma.room.findUnique({
+        where:{
+            slug:slug
+        }
+    });
+    if(!room){
+        return res.status(404).send({message:"Room not found"});
+    }
+    res.json({
+       room
+    })
+})
 app.listen(8080, () => {
     console.log("Server is running on port 8080");
 });
